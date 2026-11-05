@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>问数接口清单</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* 布局：顶部摘要 + 筛选条，下面按业务分组的路由表；每行右侧是前端标注区 */
+:root{
+  --bg:#f5f7f9; --panel:#ffffff; --fg:#1d2730; --muted:#5d6b78; --line:#dde3e9;
+  --accent:#0f7c86; --accent-soft:#e1f2f3;
+  --keep:#2f7d4f; --keep-bg:#e5f3ea; --check:#9a6a07; --check-bg:#fbf1dc;
+  --drop:#b23b3b; --drop-bg:#f9e4e4; --gone:#6b7480; --gone-bg:#eceff2;
+  --get:#1f6fb2; --post:#2f7d4f; --put:#8a5a00; --del:#b23b3b;
+  --sans:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171c; --panel:#192027; --fg:#e3e9ee; --muted:#93a1ad; --line:#2a333c;
+  --accent:#4fbcc6; --accent-soft:#16343a;
+  --keep:#6cc28e; --keep-bg:#183223; --check:#e2b552; --check-bg:#3a2e13; --drop:#ec8585; --drop-bg:#3d1d1d; --gone:#9aa4ae; --gone-bg:#262d34;
+  --get:#6eaee6; --post:#6cc28e; --put:#e2b552; --del:#ec8585; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171c; --panel:#192027; --fg:#e3e9ee; --muted:#93a1ad; --line:#2a333c;
+  --accent:#4fbcc6; --accent-soft:#16343a;
+  --keep:#6cc28e; --keep-bg:#183223; --check:#e2b552; --check-bg:#3a2e13; --drop:#ec8585; --drop-bg:#3d1d1d; --gone:#9aa4ae; --gone-bg:#262d34;
+  --get:#6eaee6; --post:#6cc28e; --put:#e2b552; --del:#ec8585; color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1{font-size:24px;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:6px 0 0;max-width:70ch}
+.summary{display:flex;flex-wrap:wrap;gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:120px}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12px}
+.svc{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:13px}
+.svc code{font-family:var(--mono);color:var(--fg)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:8px 0;z-index:5;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.bar input,.bar select{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.bar input{flex:1 1 220px;min-width:0}
+.bar select{flex:0 1 auto}
+.who{margin-left:auto;font-size:12px;color:var(--muted)}
+.act{font:inherit;font-size:13px;border:1px solid var(--accent);background:var(--accent);color:var(--panel);border-radius:6px;padding:6px 12px;cursor:pointer}
+.act.ghost{background:transparent;color:var(--accent)}
+.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#out{width:100%;min-height:160px;font-family:var(--mono);font-size:12px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px}
+section h2{font-size:15px;margin:0 0 8px;display:flex;gap:8px;align-items:baseline}
+section h2 small{color:var(--muted);font-weight:400;font-size:12px}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.04em;background:var(--panel)}
+.m{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.03em}
+.m.GET{color:var(--get)}.m.POST{color:var(--post)}.m.PUT{color:var(--put)}.m.DELETE{color:var(--del)}
+.p{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.svctag{display:inline-block;font-size:11px;color:var(--muted);margin-top:2px}
+.purpose{max-width:34ch}
+.purpose .note{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.caller{white-space:nowrap;color:var(--muted);font-size:13px}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;white-space:nowrap}
+.pill.keep{color:var(--keep);background:var(--keep-bg)}.pill.check{color:var(--check);background:var(--check-bg)}
+.pill.drop{color:var(--drop);background:var(--drop-bg)}.pill.gone{color:var(--gone);background:var(--gone-bg)}
+.mark{display:flex;flex-direction:column;gap:6px;min-width:200px}
+.seg{display:flex;gap:4px}
+.seg button{font:inherit;font-size:12px;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:6px;padding:3px 8px;cursor:pointer}
+.seg button:hover{border-color:var(--accent)}
+.seg button:focus-visible,.mark input:focus-visible,.bar input:focus-visible,.bar select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg button.on.use{background:var(--keep-bg);color:var(--keep);border-color:var(--keep)}
+.seg button.on.off{background:var(--drop-bg);color:var(--drop);border-color:var(--drop)}
+.seg button.on.unk{background:var(--check-bg);color:var(--check);border-color:var(--check)}
+.seg button:disabled{opacity:.5;cursor:default}
+.mark input{font:inherit;font-size:12px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 8px;width:100%}
+.by{font-size:11px;color:var(--muted)}
+.state{font-size:12px;color:var(--muted)}
+tr.gone td{opacity:.65}
+.empty{padding:16px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.seg button{transition:background .15s,border-color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>问数接口清单</h1>
+    <p class="lede">brain-query 后端全部 HTTP 路由，按 dev 最新代码导出（2026-11-05）。请前端逐条标「在用 / 可下 / 不确定」，可写备注。标注保存在你自己的浏览器里，标完点「复制标注结果」发给后端，后端按结果下线。</p>
+  </header>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="svc">
+    <span>主服务 <code>18765</code> 正式 / <code>18766</code> 预发</span>
+    <span>SQL 助手 <code>18777</code></span>
+    <span>检索服务 <code>18810</code></span>
+    <span>后端建议看「调用方」列：我们从代码里查到谁在调，查不到的标待确认</span>
+  </div>
+
+  <div class="bar">
+    <input id="q" type="search" placeholder="搜路径或用途">
+    <select id="fAdvice" aria-label="后端建议">
+      <option value="">全部后端建议</option>
+      <option value="keep">保留</option>
+      <option value="check">待前端确认</option>
+      <option value="drop">疑似可下</option>
+      <option value="gone">已下线</option>
+    </select>
+    <select id="fMark" aria-label="前端标注">
+      <option value="">全部标注</option>
+      <option value="none">未标注</option>
+      <option value="use">在用</option>
+      <option value="off">可下</option>
+      <option value="unk">不确定</option>
+    </select>
+    <button type="button" id="copy" class="act">复制标注结果</button><button type="button" id="clear" class="act ghost">清空我的标注</button><span class="who" id="who">标注只存在本浏览器</span>
+  </div>
+
+  <textarea id="out" hidden readonly aria-label="标注结果"></textarea>
+  <main id="groups"></main>
+</div>
+
+<script>
+const SVC={M:"主服务",S:"SQL 助手",R:"检索服务"};
+const ADV={keep:"保留",check:"待前端确认",drop:"疑似可下",gone:"已下线"};
+// [服务, 方法, 路径, 分组, 用途, 备注, 调用方, 后端建议]
+const R=[
+["M","POST","/ask/stream/cc","问数","问数流式（深度模式，Claude 引擎）","","前端页面","keep"],
+["M","POST","/ask/stream/react","问数","问数流式（快速模式，ReAct 引擎）","","前端页面","keep"],
+["M","POST","/ask/stream","问数","问数流式，按请求 engine 参数或服务配置选引擎","前端如果只用 cc / react 两条，这条可下","前端页面？","check"],
+["M","POST","/ask/stream/codex","问数","问数流式（Codex 引擎）","代码里没查到调用方","未知","drop"],
+["M","POST","/ask","问数","同步问数（不流式，一次返回）","仓库里只有评测脚本在用","评测脚本","drop"],
+["M","POST","/ask/inject","问数","运行中插一句话，下一步生效","","前端页面","keep"],
+["M","POST","/ask/stop","问数","停止当前轮","推荐用这条，下面四条是同一个处理函数的别名","前端页面","keep"],
+["M","POST","/ask/cancel","问数","停止当前轮（别名）","前端统一用 /ask/stop 后可下","前端页面？","check"],
+["M","POST","/query/cancel","问数","停止当前轮（别名）","前端统一用 /ask/stop 后可下","前端页面？","check"],
+["M","POST","/skill/cancel","问数","停止当前轮（别名）","前端统一用 /ask/stop 后可下","前端页面？","check"],
+["M","POST","/cancel","问数","停止当前轮（别名）","前端统一用 /ask/stop 后可下","前端页面？","check"],
+["M","GET","/ask/report/{token}","问数","报告直出页（HTML，iframe 或新窗口打开）","","前端页面","keep"],
+["M","GET","/ask/cross/report/{token}","问数","跨项目报告直出页","","前端页面","keep"],
+["M","POST","/query","问数","v1 同步查询（旧引擎，不执行 SQL）","旧接口，已被 /ask 系列替代","未知","drop"],
+["M","POST","/query/stream","问数","v1 流式查询（旧引擎）","旧接口，已被 /ask/stream 系列替代","未知","drop"],
+["M","GET","/history","会话与用户","会话历史","","前端页面","keep"],
+["M","POST","/feedback/turn","会话与用户","按轮次点赞 / 点踩","","前端页面","keep"],
+["M","POST","/feedback","会话与用户","提交反馈（旧版，需内部 id）","和 /feedback/turn 功能重叠，前端不用了就可下","前端页面？","check"],
+["M","POST","/memory/result","会话与用户","平台回写轮次结果摘要","","平台后端","keep"],
+["M","GET","/memory/user","会话与用户","查看用户画像（跨会话记忆）","","前端页面？","check"],
+["M","DELETE","/memory/user","会话与用户","删除用户画像","","前端页面？","check"],
+["M","GET","/suggest","会话与用户","推荐问题","","前端页面","keep"],
+["M","POST","/suggest/next","会话与用户","预测用户下一句（Tab 补全）","","前端页面","keep"],
+["M","POST","/suggest/refresh","会话与用户","手动刷新推荐题（后台跑）","","运维脚本","keep"],
+["M","GET","/suggest/refresh/status","会话与用户","推荐题刷新状态","","运维？","check"],
+["M","POST","/artifacts/upload","附件与文档","上传附件，返回 id 给 /ask/stream 用","","前端页面","keep"],
+["M","GET","/artifacts","附件与文档","会话附件列表","","前端页面","keep"],
+["M","GET","/artifacts/{artifact_id}","附件与文档","下载附件","飞书文档里的附件链接也指向这里","前端页面","keep"],
+["M","GET","/sessions/{session_id}/document","附件与文档","会话分析文档","","前端页面","keep"],
+["M","POST","/sessions/{session_id}/document/organize","附件与文档","把会话整理成飞书文档（流式）","","前端页面","keep"],
+["M","POST","/subscription/summary","附件与文档","生成订阅说明","","平台后端（订阅中心）","keep"],
+["M","PUT","/skill/sync","技能与分析包","平台同步技能：新增 / 更新","","平台后端","keep"],
+["M","DELETE","/skill/sync","技能与分析包","平台同步技能：删除","","平台后端","keep"],
+["M","GET","/skill/list","技能与分析包","列出全部技能","","平台后端？","check"],
+["M","PUT","/analytical-tool/sync","技能与分析包","平台同步分析包：新增 / 更新","","平台后端","keep"],
+["M","DELETE","/analytical-tool/sync","技能与分析包","平台同步分析包：删除","","平台后端","keep"],
+["M","GET","/analytical-tool/list","技能与分析包","列出分析包（按项目 / 用户权限）","","平台后端？","check"],
+["M","PUT","/skill/analytical-tools","技能与分析包","设置技能绑定的分析包","","平台后端","keep"],
+["M","GET","/skill/analytical-tools","技能与分析包","查技能绑定的分析包","","平台后端？","check"],
+["M","GET","/skill/bundle","技能与分析包","验证用：组装技能指令看效果","","内部调试","keep"],
+["M","GET","/skill/report-templates","技能与分析包","报告样式列表（平台编辑页下拉）","","前端页面","keep"],
+["M","GET","/skill/report-template/{template_id}/preview","技能与分析包","报告样式预览页（HTML）","","前端页面","keep"],
+["M","PUT","/knowledge/sync","知识与元数据","知识新增 / 更新 / 停用","","平台后端","keep"],
+["M","DELETE","/knowledge/sync","知识与元数据","知识删除","","平台后端","keep"],
+["M","POST","/metrics/refresh","知识与元数据","指标 / 关系 / 项目信息全量同步","","平台后端 / 运维","keep"],
+["M","POST","/metrics/project/upsert","知识与元数据","项目登记","","平台后端","keep"],
+["M","POST","/metrics/table/upsert","知识与元数据","新增 / 更新表元数据","","平台后端","keep"],
+["M","POST","/metrics/table/delete","知识与元数据","删除表元数据","","平台后端","keep"],
+["M","GET","/sqlbank/list","知识与元数据","真题手册（查询资产页数据源）","","前端页面？","check"],
+["M","GET","/sqlbank/summary","知识与元数据","真题库概览（管理端）","","前端页面？","check"],
+["M","GET","/model-config/api/v1/providers","模型配置","模型供应商列表","开关 MODEL_CONFIG_ENABLED 打开才挂载","前端页面","keep"],
+["M","POST","/model-config/api/v1/providers/{provider_id}/models","模型配置","拉取供应商的模型列表","同上","前端页面","keep"],
+["M","GET","/model-config/api/v1/config","模型配置","读取当前模型配置","同上","前端页面","keep"],
+["M","POST","/model-config/api/v1/config/validate","模型配置","校验模型配置","同上","前端页面","keep"],
+["M","PUT","/model-config/api/v1/config","模型配置","保存模型配置","同上","前端页面","keep"],
+["M","POST","/model-config/api/v1/connectivity","模型配置","测试模型连通性","同上","前端页面","keep"],
+["S","POST","/sql-assistant/ask/stream","SQL 助手","SQL 助手问答（流式）","","前端页面","keep"],
+["S","POST","/sql-assistant/ask/stop","SQL 助手","停止当前轮","","前端页面","keep"],
+["S","POST","/sql-assistant/suggest","SQL 助手","推荐问题","","前端页面","keep"],
+["S","GET","/health","SQL 助手","健康检查","","运维","keep"],
+["R","POST","/vector/metrics","检索服务","向量召回指标","仓库里没有调用方；如果没有别的系统在调，整个检索服务可下","未知","check"],
+["R","POST","/vector/tables","检索服务","向量召回表","同上","未知","check"],
+["R","POST","/vector/recall","检索服务","综合召回","同上","未知","check"],
+["R","POST","/graph/lineage","检索服务","图谱血缘","同上","未知","check"],
+["R","POST","/graph/related","检索服务","图谱关联","同上","未知","check"],
+["R","POST","/graph/table-metrics","检索服务","表关联的指标","同上","未知","check"],
+["R","GET","/health","检索服务","健康检查","","运维","check"],
+["M","GET","/health","内部运维","健康检查","","发布脚本","keep"],
+["M","POST","/admin/drain","内部运维","发布时排水（停新请求）","","发布脚本","keep"],
+["M","GET","/config-admin","内部运维","配置中心页面","/config-admin/ 同一个页面","内部页面","keep"],
+["M","GET","/config-admin/api/environments","内部运维","配置中心：环境列表","","内部页面","keep"],
+["M","GET","/config-admin/api/items","内部运维","配置中心：配置项","","内部页面","keep"],
+["M","POST","/config-admin/api/set","内部运维","配置中心：修改配置","","内部页面","keep"],
+["M","GET","/observability","内部运维","观测台页面","","内部页面","keep"],
+["M","GET","/observability/turns","内部运维","观测台：轮次列表","","内部页面","keep"],
+["M","GET","/observability/tokens","内部运维","观测台：token 与成本","","内部页面","keep"],
+["M","GET","/observability/audit","内部运维","观测台：日志调查","","内部页面","keep"],
+["M","GET","/observability/turns/{session_id}/{turn_id}","内部运维","观测台：单轮详情","","内部页面","keep"],
+["M","POST","/observability/turns/{session_id}/{turn_id}/analyze","内部运维","观测台：AI 分析一轮","","内部页面","keep"],
+["M","POST","/observability/read","内部运维","跨环境读取日志（专用令牌）","","其他环境实例","keep"],
+["M","POST","/feishu/event","内部运维","飞书机器人事件回调","","飞书","keep"],
+["M","GET","/docs","内部运维","接口文档页（FastAPI 自带，含 /redoc、/openapi.json）","","开发调试","keep"],
+["M","GET","/dashboard/summary","已下线","大盘解读","大盘概览模块已删，等推 dev 后生效","—","gone"],
+["M","GET","/dashboard/suggest","已下线","大盘推荐问题","同上","—","gone"],
+];
+const ROWS=R.map(([s,m,p,g,u,n,c,a])=>({s,m,p,g,u,n,c,a,id:(s+"_"+m+"_"+p).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}));
+const KEY="bq-route-marks-v1"; let MARKS={}; const canWrite=true;
+try{ MARKS=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(_){ MARKS={}; }
+function persist(){ try{ localStorage.setItem(KEY,JSON.stringify(MARKS)); }catch(_){ $("#who").textContent="浏览器禁止本地存储：标注刷新后会丢，请及时复制结果"; } }
+const LABEL={use:"在用",off:"可下",unk:"不确定"};
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function summary(){
+  const live=ROWS.filter(r=>r.a!=="gone");
+  const cnt=k=>live.filter(r=>r.a===k).length;
+  const marked=live.filter(r=>MARKS[r.id]?.status).length;
+  const off=live.filter(r=>MARKS[r.id]?.status==="off").length;
+  $("#summary").innerHTML=[
+    [live.length,"现存路由"],[cnt("keep"),"后端建议保留"],[cnt("check"),"待前端确认"],[cnt("drop"),"疑似可下"],
+    [marked+" / "+live.length,"前端已标注"],[off,"前端标可下"]
+  ].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+
+function render(){
+  const q=$("#q").value.trim().toLowerCase(), fa=$("#fAdvice").value, fm=$("#fMark").value;
+  const groups={};
+  for(const r of ROWS){
+    const st=MARKS[r.id]?.status||"none";
+    if(q && !(r.p.toLowerCase().includes(q)||r.u.includes(q)||r.n.includes(q))) continue;
+    if(fa && r.a!==fa) continue;
+    if(fm && st!==fm) continue;
+    (groups[r.g]=groups[r.g]||[]).push(r);
+  }
+  const html=Object.entries(groups).map(([g,rows])=>`<section><h2>${esc(g)}<small>${rows.length} 条</small></h2><div class="tbl"><table>
+    <thead><tr><th>方法</th><th>路径</th><th>用途</th><th>调用方</th><th>后端建议</th><th>前端标注</th></tr></thead><tbody>
+    ${rows.map(row).join("")}</tbody></table></div></section>`).join("");
+  $("#groups").innerHTML=html||`<div class="empty">没有符合筛选条件的路由。</div>`;
+  summary();
+}
+
+function row(r){
+  const mk=MARKS[r.id]||{}, gone=r.a==="gone";
+  const dis=(!canWrite||gone)?"disabled":"";
+  const btns=Object.entries(LABEL).map(([k,l])=>`<button type="button" class="${k}${mk.status===k?" on "+k:""}" data-id="${r.id}" data-st="${k}" ${dis}>${l}</button>`).join("");
+  const by="";
+  return `<tr class="${gone?"gone":""}">
+    <td><span class="m ${r.m}">${r.m}</span></td>
+    <td><span class="p">${esc(r.p)}</span><br><span class="svctag">${SVC[r.s]}</span></td>
+    <td class="purpose">${esc(r.u)}${r.n?`<span class="note">${esc(r.n)}</span>`:""}</td>
+    <td class="caller">${esc(r.c)}</td>
+    <td><span class="pill ${r.a}">${ADV[r.a]}</span></td>
+    <td>${gone?"":`<div class="mark"><div class="seg">${btns}</div>
+      <input id="n_${r.id}" data-note="${r.id}" placeholder="备注（前端用在哪个页面等）" value="${esc(mk.note||"")}" ${dis}>${by}</div>`}</td></tr>`;
+}
+
+function save(id,patch){
+  const cur=MARKS[id]||{};
+  const next={status:cur.status||"",note:cur.note||"",...patch,at:Date.now()};
+  if(next.status===cur.status && next.note===cur.note) return;
+  if(!next.status && !next.note) delete MARKS[id]; else MARKS[id]=next;
+  persist(); render();
+}
+
+function report(){
+  const live=ROWS.filter(r=>r.a!=="gone");
+  const pick=k=>live.filter(r=>(MARKS[r.id]||{}).status===k);
+  const line=r=>{const n=(MARKS[r.id]||{}).note; return `- ${r.m} ${r.p}（${SVC[r.s]}）${n?" —— "+n:""}`;};
+  const none=live.filter(r=>!(MARKS[r.id]||{}).status);
+  return [`# 路由标注结果（${new Date().toLocaleString("zh-CN")}）`,`已标 ${live.length-none.length} / ${live.length}`,
+    "",`## 可下（${pick("off").length}）`,...pick("off").map(line),
+    "",`## 不确定（${pick("unk").length}）`,...pick("unk").map(line),
+    "",`## 在用（${pick("use").length}）`,...pick("use").map(line),
+    "",`## 未标注（${none.length}）`,...none.map(r=>`- ${r.m} ${r.p}（${SVC[r.s]}）`)].join("\n");
+}
+$("#copy").addEventListener("click",async()=>{
+  const t=report(), box=$("#out");
+  box.value=t; box.hidden=false;
+  try{ await navigator.clipboard.writeText(t); $("#who").textContent="已复制，可直接粘贴发给后端"; }
+  catch(_){ box.focus(); box.select(); $("#who").textContent="浏览器不让自动复制，结果已选中，按 Ctrl+C 复制"; }
+});
+let armed=false;
+$("#clear").addEventListener("click",()=>{
+  if(!armed){ armed=true; $("#clear").textContent="再点一次确认清空"; setTimeout(()=>{armed=false;$("#clear").textContent="清空我的标注";},3000); return; }
+  armed=false; MARKS={}; persist(); $("#clear").textContent="清空我的标注"; $("#out").hidden=true; render(); $("#who").textContent="已清空";
+});
+
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-st]"); if(!b||b.disabled) return;
+  const cur=MARKS[b.dataset.id]?.status;
+  save(b.dataset.id,{status:cur===b.dataset.st?"":b.dataset.st});
+});
+document.addEventListener("change",e=>{
+  const id=e.target.dataset&&e.target.dataset.note; if(!id) return;
+  save(id,{note:e.target.value.trim()});
+});
+["#q","#fAdvice","#fMark"].forEach(s=>$(s).addEventListener("input",render));
+
+render();
+
+</script>
+
+</body>
+</html>
